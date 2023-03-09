@@ -9,6 +9,7 @@ import wandb
 from fedml import mlops
 from fedml.ml.trainer.trainer_creator import create_model_trainer
 from .client import Client
+from sklearn.metrics import classification_report
 
 
 class FedAvgAPI(object):
@@ -182,7 +183,9 @@ class FedAvgAPI(object):
         test_metrics = {"num_samples": [], "num_correct": [], "losses": []}
 
         client = self.client_list[0]
-
+        
+        preds = []
+        golds = []
         for client_idx in range(self.args.client_num_in_total):
             """
             Note: for datasets like "fed_CIFAR100" and "fed_shakespheare",
@@ -197,17 +200,23 @@ class FedAvgAPI(object):
                 self.train_data_local_num_dict[client_idx],
             )
             # train data
-            train_local_metrics = client.local_test(False)
+            train_local_metrics, _, _ = client.local_test(False)
             train_metrics["num_samples"].append(copy.deepcopy(train_local_metrics["test_total"]))
             train_metrics["num_correct"].append(copy.deepcopy(train_local_metrics["test_correct"]))
             train_metrics["losses"].append(copy.deepcopy(train_local_metrics["test_loss"]))
 
             # test data
-            test_local_metrics = client.local_test(True)
+            test_local_metrics, preds_client, golds_client = client.local_test(True)
             test_metrics["num_samples"].append(copy.deepcopy(test_local_metrics["test_total"]))
             test_metrics["num_correct"].append(copy.deepcopy(test_local_metrics["test_correct"]))
             test_metrics["losses"].append(copy.deepcopy(test_local_metrics["test_loss"]))
+            
+            preds += preds_client
+            golds += golds_client
 
+        r = classification_report(golds, preds, digits=4, output_dict=True)
+        f1pn = (r["0"]["f1-score"] + r["2"]["f1-score"]) / 2.0
+        
         # test on training dataset
         train_acc = sum(train_metrics["num_correct"]) / sum(train_metrics["num_samples"])
         train_loss = sum(train_metrics["losses"]) / sum(train_metrics["num_samples"])
@@ -225,7 +234,7 @@ class FedAvgAPI(object):
         mlops.log({"Train/Loss": train_loss, "round": round_idx})
         logging.info(stats)
 
-        stats = {"test_acc": test_acc, "test_loss": test_loss}
+        stats = {"test_f1pn": f1pn, "test_acc": test_acc, "test_loss": test_loss}
         if self.args.enable_wandb:
             wandb.log({"Test/Acc": test_acc, "round": round_idx})
             wandb.log({"Test/Loss": test_loss, "round": round_idx})
@@ -244,7 +253,7 @@ class FedAvgAPI(object):
         client = self.client_list[0]
         client.update_local_dataset(0, None, self.val_global, None)
         # test data
-        test_metrics = client.local_test(True)
+        test_metrics, _, _ = client.local_test(True)
 
         if self.args.dataset == "stackoverflow_nwp":
             test_acc = test_metrics["test_correct"] / test_metrics["test_total"]
