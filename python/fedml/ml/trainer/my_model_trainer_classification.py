@@ -47,8 +47,9 @@ class ModelTrainerCLS(ClientTrainer):
                 x, labels = x.to(device), labels.to(device)
                 model.zero_grad()
                 log_probs = model(x)
-                labels = labels.long()
-                loss = criterion(log_probs, labels)  # pylint: disable=E1102
+#                 labels = labels.long()
+                loss = model.loss(log_probs, labels, criterion)
+#                 loss = criterion(log_probs, labels)  # pylint: disable=E1102
                 loss.backward()
                 optimizer.step()
 
