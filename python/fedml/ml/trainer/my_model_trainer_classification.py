@@ -142,10 +142,12 @@ class ModelTrainerCLS(ClientTrainer):
         model.to(device)
         model.eval()
 
-        metrics = {"test_correct": 0, "test_loss": 0, "test_total": 0}
+        metrics = {"test_correct": 0, "test_loss": 0, "test_total": 0, "F1PN": 0}
 
         criterion = nn.CrossEntropyLoss().to(device)
 
+        preds = []
+        golds = []
         with torch.no_grad():
             for batch_idx, (x, target) in enumerate(test_data):
                 x = x.to(device)
@@ -160,4 +162,8 @@ class ModelTrainerCLS(ClientTrainer):
                 metrics["test_correct"] += correct.item()
                 metrics["test_loss"] += loss.item() * target.size(0)
                 metrics["test_total"] += target.size(0)
+                
+                preds, golds = model.evaluate(pred, target, preds, golds)
+        acc_f1pn = model.evaluation_report(preds, golds)
+        metrics["F1PN"] = acc_f1pn["F1PN"]
         return metrics
