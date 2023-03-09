@@ -142,7 +142,7 @@ class ModelTrainerCLS(ClientTrainer):
         model.to(device)
         model.eval()
 
-        metrics = {"test_correct": 0, "test_loss": 0, "test_total": 0, "F1PN": 0}
+        metrics = {"test_correct": 0, "test_loss": 0, "test_total": 0}
 
         criterion = nn.CrossEntropyLoss().to(device)
 
@@ -164,6 +164,4 @@ class ModelTrainerCLS(ClientTrainer):
                 metrics["test_total"] += target.size(0)
                 
                 preds, golds = model.evaluate(pred, target, preds, golds)
-        acc_f1pn = model.evaluation_report(preds, golds)
-        metrics["F1PN"] = acc_f1pn["F1PN"]
-        return metrics
+        return metrics, preds, golds
