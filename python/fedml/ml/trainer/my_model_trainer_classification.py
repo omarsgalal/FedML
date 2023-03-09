@@ -107,8 +107,9 @@ class ModelTrainerCLS(ClientTrainer):
                 x, labels = x.to(device), labels.to(device)
                 model.zero_grad()
                 log_probs = model(x)
-                labels = labels.long()
-                loss = criterion(log_probs, labels)  # pylint: disable=E1102
+#                 labels = labels.long()
+                loss = model.loss(log_probs, labels, criterion)
+#                 loss = criterion(log_probs, labels)  # pylint: disable=E1102
                 loss.backward()
 
                 # Uncommet this following line to avoid nan loss
@@ -153,8 +154,9 @@ class ModelTrainerCLS(ClientTrainer):
                 x = x.to(device)
                 target = target.to(device)
                 pred = model(x)
-                target = target.long()
-                loss = criterion(pred, target)  # pylint: disable=E1102
+#                 target = target.long()
+#                 loss = criterion(pred, target)  # pylint: disable=E1102
+                loss = model.loss(pred, target, criterion)
 
                 _, predicted = torch.max(pred, -1)
                 correct = predicted.eq(target).sum()
