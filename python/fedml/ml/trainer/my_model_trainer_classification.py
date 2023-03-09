@@ -159,7 +159,7 @@ class ModelTrainerCLS(ClientTrainer):
 #                 loss = criterion(pred, target)  # pylint: disable=E1102
                 loss = model.loss(pred, target, criterion)
 
-                _, predicted = torch.max(pred, -1)
+                _, predicted = torch.max(model.aggregate(pred), -1)
                 correct = predicted.eq(target).sum()
 
                 metrics["test_correct"] += correct.item()
