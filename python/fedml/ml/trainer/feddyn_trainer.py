@@ -64,7 +64,8 @@ class FedDynModelTrainer(ClientTrainer):
                 x, labels = x.to(device), labels.to(device)
                 model.zero_grad()
                 log_probs = model(x)
-                loss = criterion(log_probs, labels)  # pylint: disable=E1102
+#                 loss = criterion(log_probs, labels)  # pylint: disable=E1102
+                loss = model.loss(log_probs, labels, criterion)
 
                 #=== Dynamic regularization === #
                 lin_penalty = 0.0
@@ -126,17 +127,22 @@ class FedDynModelTrainer(ClientTrainer):
 
         criterion = nn.CrossEntropyLoss().to(device)
 
+        preds = []
+        golds = []
         with torch.no_grad():
             for batch_idx, (x, target) in enumerate(test_data):
                 x = x.to(device)
                 target = target.to(device)
                 pred = model(x)
-                loss = criterion(pred, target)  # pylint: disable=E1102
+#                 loss = criterion(pred, target)  # pylint: disable=E1102
+                loss = model.loss(pred, target, criterion)
 
-                _, predicted = torch.max(pred, -1)
+#                 _, predicted = torch.max(pred, -1)
+                _, predicted = torch.max(model.aggregate(pred), -1)
                 correct = predicted.eq(target).sum()
 
                 metrics["test_correct"] += correct.item()
                 metrics["test_loss"] += loss.item() * target.size(0)
                 metrics["test_total"] += target.size(0)
-        return metrics
+                preds, golds = model.evaluate(pred, target, preds, golds)
+        return metrics, preds, golds
