@@ -114,6 +114,7 @@ class FedOptAPI(object):
                 )
 
                 # train on new dataset
+                logging.info("train client " + str(client_idx))
                 w = client.train(w_global)
                 w_locals.append((client.get_sample_number(), copy.deepcopy(w)))
                 # loss_locals.append(copy.deepcopy(loss))
@@ -121,13 +122,19 @@ class FedOptAPI(object):
 
             # reset weight after standalone simulation
             self.model_trainer.set_model_params(w_global)
+            
+            logging.info("Aggregating")
             # update global weights
             w_avg = self._aggregate(w_locals)
             # server optimizer
             self.opt.zero_grad()
             opt_state = self.opt.state_dict()
+            
+            logging.info("_set_model_global_grads")
             self._set_model_global_grads(w_avg)
+            logging.info("_instanciate_opt")
             self._instanciate_opt()
+            logging.info("_load_state_dict")
             self.opt.load_state_dict(opt_state)
             self.opt.step()
 
@@ -140,6 +147,7 @@ class FedOptAPI(object):
                 if self.args.dataset.startswith("stackoverflow"):
                     self._local_test_on_validation_set(round_idx)
                 else:
+                    logging.info("_local_test_on_all_clients")
                     self._local_test_on_all_clients(round_idx)
 
     def _aggregate(self, w_locals):
