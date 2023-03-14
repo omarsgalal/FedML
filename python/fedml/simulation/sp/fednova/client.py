@@ -100,7 +100,8 @@ class Client:
                 net = net.to(self.device)
                 net.zero_grad()
                 log_probs = net(x)
-                loss = self.criterion(log_probs, labels)  # pylint: disable=E1102
+#                 loss = self.criterion(log_probs, labels)  # pylint: disable=E1102
+                loss = net.loss(log_probs, labels, criterion)
                 loss.backward()
 
                 # to avoid nan loss
@@ -133,12 +134,15 @@ class Client:
             test_data = self.local_test_data
         else:
             test_data = self.local_training_data
+        preds = []
+        golds = []
         with torch.no_grad():
             for batch_idx, (x, target) in enumerate(test_data):
                 x = x.to(self.device)
                 target = target.to(self.device)
                 pred = model_global(x)
-                loss = self.criterion(pred, target)  # pylint: disable=E1102
+#                 loss = self.criterion(pred, target)  # pylint: disable=E1102
+                loss = model_global.loss(pred, target, criterion)
 
                 if self.args.dataset == "stackoverflow_lr":
                     predicted = (pred > 0.5).int()
@@ -149,11 +153,14 @@ class Client:
                     metrics["test_precision"] += precision.sum().item()
                     metrics["test_recall"] += recall.sum().item()
                 else:
-                    _, predicted = torch.max(pred, -1)
+#                     _, predicted = torch.max(pred, -1)
+                    _, predicted = torch.max(model_global.aggregate(pred), -1)
                     correct = predicted.eq(target).sum()
 
                 metrics["test_correct"] += correct.item()
                 metrics["test_loss"] += loss.item() * target.size(0)
                 metrics["test_total"] += target.size(0)
+                
+                preds, golds = model_global.evaluate(pred, target, preds, golds)
 
-        return metrics
+        return metrics, preds, golds
