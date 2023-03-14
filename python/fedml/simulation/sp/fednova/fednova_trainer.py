@@ -182,6 +182,8 @@ class FedNovaTrainer(object):
         }
 
         client = self.client_list[0]
+        preds = []
+        golds = []
         for client_idx in range(self.args.client_num_in_total):
             """
             Note: for datasets like "fed_CIFAR100" and "fed_shakespheare",
@@ -196,7 +198,7 @@ class FedNovaTrainer(object):
                 self.train_data_local_num_dict[client_idx],
             )
             # train data
-            train_local_metrics = client.local_test(model_global, False)
+            train_local_metrics, _, _ = client.local_test(model_global, False)
             train_metrics["num_samples"].append(
                 copy.deepcopy(train_local_metrics["test_total"])
             )
@@ -208,7 +210,7 @@ class FedNovaTrainer(object):
             )
 
             # test data
-            test_local_metrics = client.local_test(model_global, True)
+            test_local_metrics, preds_client, golds_client = client.local_test(model_global, True)
             test_metrics["num_samples"].append(
                 copy.deepcopy(test_local_metrics["test_total"])
             )
@@ -218,6 +220,9 @@ class FedNovaTrainer(object):
             test_metrics["losses"].append(
                 copy.deepcopy(test_local_metrics["test_loss"])
             )
+            
+            preds += preds_client
+            golds += golds_client
 
             if self.args.dataset == "stackoverflow_lr":
                 train_metrics["precisions"].append(
@@ -240,6 +245,10 @@ class FedNovaTrainer(object):
             if self.args.ci == 1:
                 break
 
+        
+        r = classification_report(golds, preds, digits=4, output_dict=True)
+        f1pn = (r["0"]["f1-score"] + r["2"]["f1-score"]) / 2.0
+        
         # test on training dataset
         train_acc = sum(train_metrics["num_correct"]) / sum(
             train_metrics["num_samples"]
@@ -292,7 +301,7 @@ class FedNovaTrainer(object):
                 wandb.log({"Train/Loss": train_loss, "round": round_idx})
             logging.info(stats)
 
-            stats = {"test_acc": test_acc, "test_loss": test_loss}
+            stats = {"test_f1pn": f1pn, "test_acc": test_acc, "test_loss": test_loss}
             if self.args.enable_wandb:
                 wandb.log({"Test/Acc": test_acc, "round": round_idx})
                 wandb.log({"Test/Loss": test_loss, "round": round_idx})
