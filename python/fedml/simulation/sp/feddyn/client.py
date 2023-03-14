@@ -51,5 +51,5 @@ class Client:
             test_data = self.local_test_data
         else:
             test_data = self.local_training_data
-        metrics = self.model_trainer.test(test_data, self.device, self.args)
-        return metrics
+        metrics, preds, golds = self.model_trainer.test(test_data, self.device, self.args)
+        return metrics, preds, golds
