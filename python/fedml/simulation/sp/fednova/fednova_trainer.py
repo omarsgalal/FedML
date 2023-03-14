@@ -7,6 +7,8 @@ import wandb
 
 from .client import Client
 
+from sklearn.metrics import classification_report
+
 
 class FedNovaTrainer(object):
     def __init__(self, dataset, model, device, args):
@@ -148,6 +150,7 @@ class FedNovaTrainer(object):
                     cum_grad[k] += norm_grads[i][k] * tau_eff
         # update params
         for k in params.keys():
+            params[k] = params[k].type(torch.cuda.FloatTensor)
             if self.args.gmf != 0:
                 if k not in self.global_momentum_buffer:
                     buf = self.global_momentum_buffer[k] = torch.clone(
