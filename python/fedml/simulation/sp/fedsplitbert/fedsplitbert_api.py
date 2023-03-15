@@ -114,7 +114,7 @@ class FedSplitBERTAPI(object):
             w_global = self._aggregate(w_locals)
 
             for idx in range(len(self.w_clients)):
-                self.w_clients[idx] = self._update_client_parameters(self.w_clients[idx], global_w, self.fed_split_layer)
+                self.w_clients[idx] = self._update_client_parameters(self.w_clients[idx], w_global, self.fed_split_layer)
 
             self.model_trainer.set_model_params(w_global)
             mlops.event("agg", event_started=False, event_value=str(round_idx))
