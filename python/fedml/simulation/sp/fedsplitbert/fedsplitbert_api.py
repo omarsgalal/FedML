@@ -239,7 +239,7 @@ class FedSplitBERTAPI(object):
             golds += golds_client
 
         r = classification_report(golds, preds, digits=4, output_dict=True)
-        f1pn = 0#(r["0"]["f1-score"] + r["2"]["f1-score"]) / 2.0
+        f1pn = r["1"]["f1-score"]#(r["0"]["f1-score"] + r["2"]["f1-score"]) / 2.0
         
         # test on training dataset
         train_acc = sum(train_metrics["num_correct"]) / sum(train_metrics["num_samples"])
