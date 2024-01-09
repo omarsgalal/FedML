@@ -216,6 +216,7 @@ class FedSplitBERTAPI(object):
             Note: for datasets like "fed_CIFAR100" and "fed_shakespheare",
             the training client number is larger than the testing client number
             """
+            print(f"######### Inside client {client_idx} #############\n\n")
             if self.test_data_local_dict[client_idx] is None:
                 continue
             client.update_local_dataset(
