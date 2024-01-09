@@ -192,7 +192,8 @@ class FedSplitBERTAPI(object):
             global_state_dict_keys += [l.replace('.0.', f".{i}.") for l in bert_layer_state_dict_keys]
         local_w_new = copy.deepcopy(local_w)
         for k in global_state_dict_keys:
-            local_w_new[k] = global_w[k]
+            if k in global_w and k in local_w_new:
+                local_w_new[k] = global_w[k]
         return local_w_new
 
 
