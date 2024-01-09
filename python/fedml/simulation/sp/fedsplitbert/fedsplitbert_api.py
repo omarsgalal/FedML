@@ -193,6 +193,7 @@ class FedSplitBERTAPI(object):
         local_w_new = copy.deepcopy(local_w)
         for k in global_state_dict_keys:
             if k in global_w and k in local_w_new:
+                print("########################### weight update fedsplitbert ##########################\n\n")
                 local_w_new[k] = global_w[k]
         return local_w_new
 
@@ -240,7 +241,7 @@ class FedSplitBERTAPI(object):
             golds += golds_client
 
         r = classification_report(golds, preds, digits=4, output_dict=True)
-        f1pn = r["1"]["f1-score"]#(r["0"]["f1-score"] + r["2"]["f1-score"]) / 2.0
+        f1pn = (r["0"]["f1-score"] + r["2"]["f1-score"]) / 2.0
         
         # test on training dataset
         train_acc = sum(train_metrics["num_correct"]) / sum(train_metrics["num_samples"])
