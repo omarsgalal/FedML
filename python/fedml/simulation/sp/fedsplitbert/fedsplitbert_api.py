@@ -193,7 +193,6 @@ class FedSplitBERTAPI(object):
         local_w_new = copy.deepcopy(local_w)
         for k in global_state_dict_keys:
             if k in global_w and k in local_w_new:
-                print("########################### weight update fedsplitbert ##########################\n\n")
                 local_w_new[k] = global_w[k]
         return local_w_new
 
@@ -241,26 +240,38 @@ class FedSplitBERTAPI(object):
             preds += preds_client
             golds += golds_client
 
+        print("finish cs")
+        print(len(preds))
+        print(len(golds))
+        print(np.array(golds).min())
+        print(np.array(golds).max())
+        print(np.array(preds).min())
+        print(np.array(preds).max())
         r = classification_report(golds, preds, digits=4, output_dict=True)
+        print("finish cs")
+        print(r)
         f1pn = (r["0"]["f1-score"] + r["2"]["f1-score"]) / 2.0
-        
+        print("finish cs")
         # test on training dataset
         train_acc = sum(train_metrics["num_correct"]) / sum(train_metrics["num_samples"])
         train_loss = sum(train_metrics["losses"]) / sum(train_metrics["num_samples"])
 
+        print("finish cs")
         # test on test dataset
         test_acc = sum(test_metrics["num_correct"]) / sum(test_metrics["num_samples"])
         test_loss = sum(test_metrics["losses"]) / sum(test_metrics["num_samples"])
 
+        print("finish cs")
         stats = {"training_acc": train_acc, "training_loss": train_loss}
         if self.args.enable_wandb:
             wandb.log({"Train/Acc": train_acc, "round": round_idx})
             wandb.log({"Train/Loss": train_loss, "round": round_idx})
 
+        print("finish cs")
         mlops.log({"Train/Acc": train_acc, "round": round_idx})
         mlops.log({"Train/Loss": train_loss, "round": round_idx})
         logging.info(stats)
-
+        print("finish cs")
         stats = {"test_f1pn": f1pn, "test_acc": test_acc, "test_loss": test_loss}
         if self.args.enable_wandb:
             wandb.log({"Test/Acc": test_acc, "round": round_idx})
@@ -268,6 +279,8 @@ class FedSplitBERTAPI(object):
 
         mlops.log({"Test/Acc": test_acc, "round": round_idx})
         mlops.log({"Test/Loss": test_loss, "round": round_idx})
+
+        print("finish cs")
         logging.info(stats)
 
     def _local_test_on_validation_set(self, round_idx):
